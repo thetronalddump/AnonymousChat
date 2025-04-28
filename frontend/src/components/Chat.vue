@@ -1,117 +1,137 @@
 <template>
-  <div class="infinite-list-wrapper" style="overflow: auto">
+  <div class="chat-wrapper">
     <ul
+        ref="chatListRef"
+        class="chat-list"
         v-infinite-scroll="load"
-        class="list"
         :infinite-scroll-disabled="disabled"
     >
-      <li v-for="i in messages" :key="i" class="list-item" :class="i.type">{{ i.message }}</li>
+      <li
+          v-for="(msg, index) in messages"
+          :key="index"
+          class="list-item"
+          :class="msg.type"
+      >
+        {{ msg.message }}
+      </li>
     </ul>
+    <hr>
+    <div class="message-input">
+      <el-input
+          v-model="textarea"
+          type="textarea"
+          :autosize="{ minRows: 1, maxRows: 3 }"
+          class="input"
+          placeholder="Введите сообщение"
+          resize="none"
+          maxlength="512"
+          @keydown.enter.prevent="sendMessage"
+      />
+      <el-button
+          type="primary"
+          :icon="Message"
+          circle
+          size="large"
+          class="send-btn"
+          @click="sendMessage"
+      />
+    </div>
   </div>
-  <div class="sending_message">
-    <el-input
-        v-model="textarea1"
-        class="message_input"
-        autosize
-        type="textarea"
-        placeholder="Input message"
-        style="width: 35%"
-        resize="none"
-        maxlength="512">
-    </el-input>
-    <el-button type="primary" :icon="Message" circle class="sending_button" size="large" @click="send_message"/>
-  </div>
-
-  />
 </template>
 
-<script lang="ts" setup>
-import { computed, ref } from 'vue'
+<script setup lang="ts">
+import { ref, computed, nextTick } from 'vue'
 import { Message } from '@element-plus/icons-vue'
 
+const textarea = ref('')
+const messages = ref<{ message: string; type: string }[]>([])
 
-const textarea1 = ref('')
+const chatListRef = ref<HTMLElement | null>(null)
 
-const count = ref(1)
-const messages = ref([])
-const loading = ref(false)
-const noMore = computed(() => count.value >= 20)
-const disabled = computed(() => loading.value || noMore.value)
-const load = () => {
-  loading.value = true
-  setTimeout(() => {
-    count.value += 2
-    loading.value = false
-  }, 2000)
+const scrollToBottom = async () => {
+  await nextTick()
+  if (chatListRef.value) {
+    chatListRef.value.scrollTo({
+      top: chatListRef.value.scrollHeight,
+      behavior: 'smooth',
+    })
+  }
 }
 
-const send_message = () => {
-  messages.value.push({
-    "message": textarea1.value,
-    "type": "message-sent"
-  })
-  messages.value.push({
-    "message": textarea1.value,
-    "type": "message-received"
-  })
-  textarea1.value = ''
+const sendMessage = () => {
+  if (!textarea.value.trim()) return
 
+  messages.value.push({ message: textarea.value, type: 'message-sent' })
+  messages.value.push({ message: textarea.value, type: 'message-received' })
+  textarea.value = ''
+  scrollToBottom()
 }
 </script>
 
-<style>
-.infinite-list-wrapper {
-  height: 500px;
-  text-align: center;
-
+<style scoped>
+.chat-wrapper {
+  width: 40%;
+  margin: 0 auto;
+  padding: 10px;
 }
-.infinite-list-wrapper .list {
-  padding: 0;
-  margin-right: 30%;
-  margin-left: 30%;
-  list-style: none;
+
+.chat-list {
+  height: 500px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  padding: 10px;
+  scroll-behavior: smooth;
 }
 
-
 .list-item {
-  white-space: normal;
   display: inline-block;
-  max-width: 60%;
   padding: 10px 15px;
   border-radius: 20px;
-  margin: 8px 0;
   font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
-  position: relative;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  word-break: break-word;
+  white-space: normal;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 40%;
 }
-.infinite-list-wrapper .list-item + .list-item {
-  margin-top: 10px;
-}
-.message_input {
-  margin-left: 30%;
-  margin-top: 25px;
-}
-.sending_button {
-  margin-left: 20px;
 
-}
 .message-sent {
-  background-color: #DCF8C6;
+  background-color: #dcf8c6;
+  color: #333;
   align-self: flex-end;
-  border-bottom-right-radius: 0;
   margin-left: auto;
-  color: cornflowerblue;
+  border-bottom-right-radius: 0;
 }
 
 .message-received {
-  color: white;
   background-color: cornflowerblue;
+  color: white;
   align-self: flex-start;
-  border-bottom-left-radius: 0;
   margin-right: auto;
+  border-bottom-left-radius: 0;
 }
+
+.message-input {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 15px;
+}
+
+.input {
+  flex: 1;
+  max-width: 90%;
+}
+
+.send-btn {
+  margin-left: 15px;
+}
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #ccc, transparent);
+  margin: 20px 0;
+}
+
 </style>
