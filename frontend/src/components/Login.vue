@@ -17,7 +17,7 @@
       </el-col>
     </el-form-item>
     <el-form-item label="Gender">
-      <el-radio-group v-model="form.resource">
+      <el-radio-group v-model="form.gender">
         <el-radio value="Male">Male</el-radio>
         <el-radio value="Female">Female</el-radio>
       </el-radio-group>

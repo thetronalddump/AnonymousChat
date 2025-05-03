@@ -3,8 +3,6 @@
     <ul
         ref="chatListRef"
         class="chat-list"
-        v-infinite-scroll="load"
-        :infinite-scroll-disabled="disabled"
     >
       <li
           v-for="(msg, index) in messages"
@@ -22,7 +20,7 @@
           type="textarea"
           :autosize="{ minRows: 1, maxRows: 3 }"
           class="input"
-          placeholder="Введите сообщение"
+          placeholder="Enter your message"
           resize="none"
           maxlength="512"
           @keydown.enter.prevent="sendMessage"

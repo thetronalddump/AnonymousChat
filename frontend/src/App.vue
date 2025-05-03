@@ -6,9 +6,10 @@ import Login from './components/Login.vue'
 </script>
 
 <template>
-  <div class="login_wrapper">
-    <Login class="login" ></Login>
-  </div>
+<!--  <div class="login_wrapper">-->
+<!--    <Login class="login" ></Login>-->
+<!--  </div>-->
+  <Chat></Chat>
 </template>
 
 <style scoped>
