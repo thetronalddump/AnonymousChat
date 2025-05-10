@@ -7,6 +7,6 @@ COPY . .
 
 RUN npm install
 
-EXPOSE 5174
+EXPOSE 5173
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host"]
