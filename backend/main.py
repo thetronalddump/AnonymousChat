@@ -5,7 +5,7 @@ import uvicorn
 
 from src.entities.entities import LoggerHandlers
 from src.handlers.chat_route import chat_router
-from src.handlers.login_router import login_router
+from src.handlers.login_route import login_router
 from src.handlers.main_route import app
 
 

@@ -10,7 +10,3 @@ app = FastAPI(
     contact={'name': 'Michael', 'email': 'mdev4work@gmail.com'}
 )
 
-
-@app.get("/sosi")
-async def sosi():
-    return {"message": "sosi"}

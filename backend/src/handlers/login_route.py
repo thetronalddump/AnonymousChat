@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 login_router = APIRouter(prefix="/login")
 
 
-@login_router.post('/find')
+@login_router.post('/search')
 async def login(user: UserModel):
     await DBEntities.rooms_control.add_participant(user)
-    return {"sosi": "huy"}
+    return {"status": "search"}
+
+

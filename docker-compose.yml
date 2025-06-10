@@ -3,27 +3,28 @@ version: "3.9"
 services:
   backend:
     build: ./backend
-    container_name: anon_chat_backend
+    container_name: backend
+    volumes:
+      - ./backend:/backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    depends_on:
+      - cache
 
   frontend:
     build: ./frontend
-    container_name: anon_chat_frontend
+    container_name: frontend
+    volumes:
+      - ./frontend:/frontend
     ports:
       - "5173:5173"
-    volumes:
-      - ./frontend:/app
-    command: npm run dev -- --host
 
   cache:
     image: redis:latest
     container_name: cache
     ports:
       - "6379:6379"
+
 
 
 

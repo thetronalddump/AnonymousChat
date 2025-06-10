@@ -6,7 +6,7 @@ import redis.asyncio as redis
 from redis.asyncio import Redis
 
 from src.models.models import UserModel
-from utils.utils import find_best_room
+from src.utils.utils import find_best_room
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +81,10 @@ class RoomsControl:
             logger.info("Getting rooms from cache")
             async with self.__con.pipeline() as connection:
                 keys = await connection.keys().execute()
+                print(keys)
                 rooms = []
                 for key in keys:
+                    print(key)
                     room = await connection.get(key).execute()
                     rooms.append(room)
 
@@ -97,7 +99,7 @@ class RoomsControl:
             await self.__create_connection()
 
         try:
-            logger.info("Adding participant &s to room ", user.nickname)
+            logger.info("Adding participant %s to room ", user.nickname)
             async with self.__con.pipeline() as connection:
                 rooms = await self._get_rooms()
                 best_room = find_best_room(user, rooms)
@@ -106,10 +108,11 @@ class RoomsControl:
                         "gender": user.gender,
                         "age": user.age,
                     }
-                    key = f"user:{await connection.incr("user:id")}"
+                    user_id = await connection.incr("user:id")
+                    key = f"user:{user_id}"
                     await connection.set(key, best_room).execute()
                 else:
                     await self._create_room(user)
-            logger.info("Done adding participant &s to room ", user.nickname)
+            logger.info("Done adding participant %s to room ", user.nickname)
         except Exception as e:
-            logger.error("Error while adding participant &s to room ", user.nickname, exc_info=e)
+            logger.error("Error while adding participant %s to room ", user.nickname, exc_info=e)
