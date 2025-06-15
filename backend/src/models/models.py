@@ -10,6 +10,7 @@ class UserModel(BaseModel):
 
 
 class RoomModel(BaseModel):
+    room_id: int
     status: str
     created_at: int
     expires_at: int

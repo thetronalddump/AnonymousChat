@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from typing import List, Dict
@@ -52,12 +53,13 @@ class RoomsControl:
         try:
             logger.info("Creating room for user %s", user.nickname)
             async with self.__con.pipeline() as connection:
-                next_id = await connection.incr("room:id")
-                key = f"user:{next_id}"
-                value = {
+                next_id = await connection.incr("room:id").execute()
+                key = f"room:{next_id[0]}"
+                value = json.dumps({
+                    "room_id": next_id[0],
                     "status": "waiting",
-                    "created_at": time.time(),
-                    "expires_at": time.time() + EXPIRATION_TIME,
+                    "created_at": int(time.time()),
+                    "expires_at": int(time.time() + EXPIRATION_TIME),
                     "participants": [
                         {
                             "nickname": user.nickname,
@@ -65,13 +67,13 @@ class RoomsControl:
                              "gender": user.gender,
                          }
                     ]
-                }
+                })
                 await connection.set(key, value).execute()
                 await connection.expire(key, EXPIRATION_TIME).execute()
             logger.info("Done creating room for user %s", user.nickname)
             return True
         except Exception as e:
-            logger.error("Error while creating room for user %d", user.nickname, exc_info=e)
+            logger.error("Error while creating room for user %s", user.nickname, exc_info=e)
 
     async def _get_rooms(self) -> List[Dict] | List[None]:
         if not self.__con:
@@ -81,18 +83,18 @@ class RoomsControl:
             logger.info("Getting rooms from cache")
             async with self.__con.pipeline() as connection:
                 keys = await connection.keys().execute()
-                print(keys)
+                keys = keys[0]
                 rooms = []
                 for key in keys:
-                    print(key)
-                    room = await connection.get(key).execute()
-                    rooms.append(room)
+                    if key != "room:id":
+                        room = await connection.get(key).execute()
+                        rooms.append(room)
 
             logger.info("Done getting rooms from cache, total rooms: %d", len(rooms))
-            return rooms if len(rooms) > 0 else [None]
+            return rooms if len(rooms) > 0 else None
         except Exception as e:
             logger.error("Error while reading from cache", exc_info=e)
-            return [None]
+            return None
 
     async def add_participant(self, user: UserModel):
         if not self.__con:
@@ -104,13 +106,10 @@ class RoomsControl:
                 rooms = await self._get_rooms()
                 best_room = find_best_room(user, rooms)
                 if best_room:
-                    best_room["participants"][user.nickname] = {
-                        "gender": user.gender,
-                        "age": user.age,
-                    }
-                    user_id = await connection.incr("user:id")
-                    key = f"user:{user_id}"
-                    await connection.set(key, best_room).execute()
+                    best_room.participants.append(user.model_dump())
+                    best_room.status = "connected"
+                    key = f"room:{best_room.room_id}"
+                    await connection.set(key, json.dumps(best_room.model_dump())).execute()
                 else:
                     await self._create_room(user)
             logger.info("Done adding participant %s to room ", user.nickname)
