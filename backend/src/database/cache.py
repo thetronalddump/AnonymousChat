@@ -6,7 +6,7 @@ from typing import List, Dict
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
-from src.models.models import UserModel
+from src.models.models import UserModel, RoomModel
 from src.utils.utils import find_best_room
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class RoomsControl:
             async with self.__con.pipeline() as connection:
                 next_id = await connection.incr("room:id").execute()
                 key = f"room:{next_id[0]}"
-                value = json.dumps({
+                value = {
                     "room_id": next_id[0],
                     "status": "waiting",
                     "created_at": int(time.time()),
@@ -67,11 +67,12 @@ class RoomsControl:
                              "gender": user.gender,
                          }
                     ]
-                })
-                await connection.set(key, value).execute()
+                }
+                await connection.set(key, json.dumps(value)).execute()
                 await connection.expire(key, EXPIRATION_TIME).execute()
+
             logger.info("Done creating room for user %s", user.nickname)
-            return True
+            return  RoomModel.model_validate(value)
         except Exception as e:
             logger.error("Error while creating room for user %s", user.nickname, exc_info=e)
 
@@ -110,8 +111,24 @@ class RoomsControl:
                     best_room.status = "connected"
                     key = f"room:{best_room.room_id}"
                     await connection.set(key, json.dumps(best_room.model_dump())).execute()
+                    logger.info("Done adding participant %s to room ", user.nickname)
+                    return best_room
                 else:
-                    await self._create_room(user)
-            logger.info("Done adding participant %s to room ", user.nickname)
+                    return await self._create_room(user)
+
         except Exception as e:
             logger.error("Error while adding participant %s to room ", user.nickname, exc_info=e)
+
+    async def get_status(self, room_id: int):
+        if not self.__con:
+            await self.__create_connection()
+
+        try:
+            logger.info("Getting room from cache, id: %s", room_id)
+            async with self.__con.pipeline() as connection:
+                room = await connection.get(f"room:{room_id}").execute()
+                status = json.loads(room[0])["status"]
+                return status
+        except Exception as e:
+            logger.error("Error while getting room from cache", exc_info=e)
+            return None

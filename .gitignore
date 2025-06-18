@@ -31,3 +31,5 @@ coverage
 .venv/
 __pycache__
 backend/.env
+frontend/.vscode
+
