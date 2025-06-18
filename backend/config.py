@@ -6,3 +6,5 @@ redis_config = {
     "decode_responses": True,
     "encoding": "utf-8"
 }
+
+domain = config('DOMAIN')
