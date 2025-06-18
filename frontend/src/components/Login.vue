@@ -1,18 +1,20 @@
 <template>
-  <div>
+  <div class="login-wrapper">
+  <div class="login">
 
   <el-form :model="form" label-width="auto" style="max-width: 400px">
     <h1>Login</h1>
     <el-form-item label="Nickname">
-      <el-input v-model="form.name" />
+      <el-input v-model="form.nickname" />
     </el-form-item>
-    <el-form-item label="Date of birth">
+    <el-form-item label="Age">
       <el-col :span="11">
-        <el-date-picker
-            v-model="form.date_of_birth"
-            type="date"
-            placeholder="Pick a date"
+        <el-input-number
+            v-model="form.age"
             style="width: 150px"
+            min=16
+            value-on-clear=18
+
         />
       </el-col>
     </el-form-item>
@@ -27,6 +29,7 @@
     </el-form-item>
   </el-form>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -34,19 +37,41 @@ import { reactive } from 'vue'
 
 
 const form = reactive({
-  name: '',
-  date_of_birth: '',
+  nickname: '',
+  age: '',
   gender: ''
 })
 
 const onSubmit = () => {
   console.log('submit!')
+  fetch('http://localhost:8000/login/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(form)
+  })
+      .then(res => res.json())
+      .then(data => console.log(data))
+      .catch(err => console.error(err))
 }
 </script>
 
 <style scoped>
   h1 {
     text-align: center;
+  }
+  .login-wrapper {
+    height: 650px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login {
+    padding: 20px;
+    border: 3px cornflowerblue solid;
+    border-radius: 10px;
+
   }
 
 </style>

@@ -6,6 +6,7 @@ WORKDIR /frontend
 COPY . .
 
 RUN npm install
+RUN npm install vue-router
 
 EXPOSE 5173
 
