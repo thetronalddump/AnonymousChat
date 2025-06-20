@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import uvicorn
+from starlette.middleware.cors import CORSMiddleware
 
 from src.entities.entities import LoggerHandlers
 from src.handlers.chat_route import chat_router
@@ -21,6 +22,13 @@ def configure_logging():
 async def main():
     app.include_router(login_router)
     app.include_router(chat_router)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],  # адрес твоего фронта
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     configure_logging()
     config = uvicorn.Config(app=app, host="0.0.0.0", port=8000, loop="asyncio", reload=True)
     server = uvicorn.Server(config)

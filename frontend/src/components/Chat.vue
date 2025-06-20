@@ -38,11 +38,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import {ref, computed, nextTick, onMounted, onBeforeUnmount} from 'vue'
 import { Message } from '@element-plus/icons-vue'
+import {useRoute} from "vue-router";
+
 
 const textarea = ref('')
-const messages = ref<{ message: string; type: string }[]>([])
+// const messages = ref<{ message: string; type: string }[]>([])
 
 const chatListRef = ref<HTMLElement | null>(null)
 
@@ -56,13 +58,59 @@ const scrollToBottom = async () => {
   }
 }
 
-const sendMessage = () => {
-  if (!textarea.value.trim()) return
+const route = useRoute()
 
-  messages.value.push({ message: textarea.value, type: 'message-sent' })
-  messages.value.push({ message: textarea.value, type: 'message-received' })
-  textarea.value = ''
-  scrollToBottom()
+const messages = ref([])
+let socket = null
+
+onMounted(() => {
+  const wsUrl = route.query.ws
+  const username = ref(wsUrl.split('/').pop())
+  if (!wsUrl) {
+    console.error('WebSocket URL не передан')
+    return
+  }
+
+  socket = new WebSocket(wsUrl)
+
+  socket.onopen = () => {
+    console.log('🔌 WebSocket открыт')
+  }
+
+  socket.onmessage = (event) => {
+    const msg = JSON.parse(event.data)
+    messages.value.push({
+      message: msg.data,
+      type: msg.username === username.value ? 'message-sent' : 'message-received'
+    })
+    console.log(msg.user, username.value)
+  }
+
+  socket.onerror = (err) => {
+    console.error('❌ Ошибка WebSocket:', err)
+  }
+
+  socket.onclose = () => {
+    console.log('🔌 WebSocket закрыт')
+  }
+})
+
+onBeforeUnmount(() => {
+  socket?.close()
+})
+
+const sendMessage = () => {
+  console.log('➡️ sendMessage called')
+  console.log('socket:', socket)
+  console.log('readyState:', socket?.readyState)
+
+  if (socket && socket.readyState === 1 && textarea.value.trim()) {
+    console.log('📤 отправка:', textarea.value)
+    socket.send(textarea.value)
+    textarea.value = ''
+  } else {
+    console.log('❌ Сокет не готов или сообщение пустое')
+  }
 }
 </script>
 

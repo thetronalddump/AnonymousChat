@@ -1,5 +1,6 @@
 from decouple import config
 
+from src.utils.ws_manager import ConnectionManager
 
 redis_config = {
     "url": f"redis://{config('REDIS_HOST')}",
@@ -8,3 +9,5 @@ redis_config = {
 }
 
 domain = config('DOMAIN')
+
+manager = ConnectionManager()

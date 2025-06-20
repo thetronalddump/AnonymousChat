@@ -34,7 +34,9 @@
 
 <script setup>
 import { reactive } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 
 const form = reactive({
   nickname: '',
@@ -42,19 +44,23 @@ const form = reactive({
   gender: ''
 })
 
-const onSubmit = () => {
-  console.log('submit!')
-  fetch('http://localhost:8000/login/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(form)
-  })
-      .then(res => res.json())
-      .then(data => console.log(data))
-      .catch(err => console.error(err))
+const onSubmit = async () => {
+  try {
+    const res = await fetch('http://localhost:8000/login/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
+    })
+
+    const data = await res.json()
+    const wsUrl = data.url
+    await router.push({ name: 'Chat', query: { ws: wsUrl } })
+
+  } catch (err) {
+    console.error('Ошибка при логине:', err)
+  }
 }
+
 </script>
 
 <style scoped>
