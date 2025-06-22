@@ -20,10 +20,18 @@ async def login(user: UserModel):
     while status != "connected":
         await asyncio.sleep(5)
         status = await DBEntities.rooms_control.get_status(room.room_id)
-    return {
-        "url": f"ws://{config.domain}/ws/{room.room_id}/{user.nickname}"
+    companion_info = await DBEntities.rooms_control.get_companion_info(room.room_id, user)
+    response = {
+        "url": f"ws://{config.domain}/ws/{room.room_id}/{user.nickname}",
+        "companion_info": companion_info,
     }
+    return response
 
 
+@login_router.post('/close')
+async def close_search(room_id: int):
+    await DBEntities.rooms_control.delete_room(room_id)
+
+    return {"status": "closed"}
 
 
