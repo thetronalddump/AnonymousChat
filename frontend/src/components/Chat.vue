@@ -1,5 +1,23 @@
 <template>
   <div class="chat-wrapper">
+    <el-page-header @back="onBack" >
+      <template #content>
+        <div class="flex items-center">
+          <el-avatar
+              :size="36"
+              class="mr-3"
+
+          > <el-icon :size="25" v-if="companionInfo.gender == 'Male'"><Male /></el-icon>
+            <el-icon :size="25" v-else><Female /> </el-icon> </el-avatar>
+          <span class="text-large font-600 mr-3"> {{ '&nbsp;&nbsp;' + companionInfo.nickname + '&nbsp;&nbsp;&nbsp;'}} </span>
+
+          <span class="text-sm mr-2" style="color: var(--el-text-color-regular)">
+          {{companionInfo.age}} y.
+        </span>
+        </div>
+      </template>
+    </el-page-header>
+    <hr>
     <ul
         ref="chatListRef"
         class="chat-list"
@@ -15,6 +33,7 @@
     </ul>
     <hr>
     <div class="message-input">
+
       <el-input
           v-model="textarea"
           type="textarea"
@@ -39,13 +58,17 @@
 
 <script setup lang="ts">
 import {ref, computed, nextTick, onMounted, onBeforeUnmount} from 'vue'
-import { Message } from '@element-plus/icons-vue'
-import {useRoute} from "vue-router";
+import {Female, Male, Message} from '@element-plus/icons-vue'
+import {useRoute, useRouter} from "vue-router";
+import { useSessionStore } from '@/stores/session'
 
+
+
+const session = useSessionStore()
+
+const companionInfo = session.companionInfo
 
 const textarea = ref('')
-// const messages = ref<{ message: string; type: string }[]>([])
-
 const chatListRef = ref<HTMLElement | null>(null)
 
 const scrollToBottom = async () => {
@@ -57,15 +80,19 @@ const scrollToBottom = async () => {
     })
   }
 }
-
+const router = useRouter()
 const route = useRoute()
+
+const wsUrl = route.query.ws
+const username = ref(wsUrl.split('/').pop())
+const roomId = ref(wsUrl.split('/')[wsUrl.split('/').length - 2])
 
 const messages = ref([])
 let socket = null
 
 onMounted(() => {
-  const wsUrl = route.query.ws
-  const username = ref(wsUrl.split('/').pop())
+
+
   if (!wsUrl) {
     console.error('WebSocket URL не передан')
     return
@@ -79,10 +106,22 @@ onMounted(() => {
 
   socket.onmessage = (event) => {
     const msg = JSON.parse(event.data)
-    messages.value.push({
-      message: msg.data,
-      type: msg.username === username.value ? 'message-sent' : 'message-received'
-    })
+    let message
+
+    if (msg.data === "disconnect") {
+      message = {
+        message: "Your interlocutor has completed the chat. Press the \"Back\" button to return to the menu.",
+        type: "service-message",
+      }
+    } else {
+      message = {
+        message: msg.data,
+        type: msg.username === username.value ? 'message-sent' : 'message-received'
+      }
+    }
+
+    messages.value.push(message)
+    scrollToBottom()
     console.log(msg.user, username.value)
   }
 
@@ -112,6 +151,18 @@ const sendMessage = () => {
     console.log('❌ Сокет не готов или сообщение пустое')
   }
 }
+
+const onBack = async () => {
+  socket.send("disconnect")
+  if (socket && socket.readyState === 1) {
+    socket.close(1000, "User cancelled")
+  }
+  await fetch(`http://localhost:8000/login/close?room_id=${roomId.value}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+  })
+  await router.push({name: 'Login'})
+}
 </script>
 
 <style scoped>
@@ -122,7 +173,7 @@ const sendMessage = () => {
 }
 
 .chat-list {
-  height: 500px;
+  height: 480px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -180,4 +231,10 @@ hr {
   margin: 20px 0;
 }
 
+.service-message {
+  color: gray;
+  font-style: italic;
+  text-align: center;
+
+}
 </style>
