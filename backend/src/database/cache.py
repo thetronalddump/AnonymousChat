@@ -132,3 +132,31 @@ class RoomsControl:
         except Exception as e:
             logger.error("Error while getting room from cache", exc_info=e)
             return None
+
+    async def get_companion_info(self, room_id, user):
+        if not self.__con:
+            await self.__create_connection()
+
+        try:
+            logger.info("Getting room from cache, id: %s", room_id)
+            async with self.__con.pipeline() as connection:
+                room = await connection.get(f"room:{room_id}").execute()
+                participants = json.loads(room[0])["participants"]
+                companion = [participant for participant in participants if participant["nickname"] != user.nickname][0]
+                return companion
+        except Exception as e:
+            logger.error("Error while getting room from cache", exc_info=e)
+            return None
+
+    async def delete_room(self, room_id):
+        if not self.__con:
+            await self.__create_connection()
+
+        try:
+            logger.info("Deleting room from cache, id: %s", room_id)
+            async with self.__con.pipeline() as connection:
+                await connection.delete(f"room:{room_id}").execute()
+        except Exception as e:
+            logger.error("Error while deleting room from cache", exc_info=e)
+
+
