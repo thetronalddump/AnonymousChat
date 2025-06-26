@@ -1,12 +1,11 @@
 import json
 import logging
 import time
-from typing import List, Dict
 
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
-from src.models.models import UserModel, RoomModel
+from src.models.models import RoomModel, UserModel
 from src.utils.utils import find_best_room
 
 logger = logging.getLogger(__name__)
@@ -43,10 +42,7 @@ class RoomsControl:
     async def __create_connection(self):
         self.__con = await RedisConnection.get_connection(self.__init_data)
 
-    async def _create_room(
-            self,
-            user: UserModel
-    ):
+    async def _create_room(self, user: UserModel):
         if not self.__con:
             await self.__create_connection()
 
@@ -63,20 +59,22 @@ class RoomsControl:
                     "participants": [
                         {
                             "nickname": user.nickname,
-                             "age": user.age,
-                             "gender": user.gender,
-                         }
-                    ]
+                            "age": user.age,
+                            "gender": user.gender,
+                        }
+                    ],
                 }
                 await connection.set(key, json.dumps(value)).execute()
                 await connection.expire(key, EXPIRATION_TIME).execute()
 
             logger.info("Done creating room for user %s", user.nickname)
-            return  RoomModel.model_validate(value)
+            return RoomModel.model_validate(value)
         except Exception as e:
-            logger.error("Error while creating room for user %s", user.nickname, exc_info=e)
+            logger.error(
+                "Error while creating room for user %s", user.nickname, exc_info=e
+            )
 
-    async def _get_rooms(self) -> List[Dict] | List[None]:
+    async def _get_rooms(self) -> list[dict] | list[None]:
         if not self.__con:
             await self.__create_connection()
 
@@ -110,14 +108,18 @@ class RoomsControl:
                     best_room.participants.append(user.model_dump())
                     best_room.status = "connected"
                     key = f"room:{best_room.room_id}"
-                    await connection.set(key, json.dumps(best_room.model_dump())).execute()
+                    await connection.set(
+                        key, json.dumps(best_room.model_dump())
+                    ).execute()
                     logger.info("Done adding participant %s to room ", user.nickname)
                     return best_room
                 else:
                     return await self._create_room(user)
 
         except Exception as e:
-            logger.error("Error while adding participant %s to room ", user.nickname, exc_info=e)
+            logger.error(
+                "Error while adding participant %s to room ", user.nickname, exc_info=e
+            )
 
     async def get_status(self, room_id: int):
         if not self.__con:
@@ -142,7 +144,11 @@ class RoomsControl:
             async with self.__con.pipeline() as connection:
                 room = await connection.get(f"room:{room_id}").execute()
                 participants = json.loads(room[0])["participants"]
-                companion = [participant for participant in participants if participant["nickname"] != user.nickname][0]
+                companion = [
+                    participant
+                    for participant in participants
+                    if participant["nickname"] != user.nickname
+                ][0]
                 return companion
         except Exception as e:
             logger.error("Error while getting room from cache", exc_info=e)
@@ -158,5 +164,3 @@ class RoomsControl:
                 await connection.delete(f"room:{room_id}").execute()
         except Exception as e:
             logger.error("Error while deleting room from cache", exc_info=e)
-
-

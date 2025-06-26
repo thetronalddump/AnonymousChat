@@ -1,4 +1,3 @@
-from typing import List
 
 from pydantic import BaseModel
 
@@ -14,4 +13,4 @@ class RoomModel(BaseModel):
     status: str
     created_at: int
     expires_at: int
-    participants: List[UserModel]
+    participants: list[UserModel]

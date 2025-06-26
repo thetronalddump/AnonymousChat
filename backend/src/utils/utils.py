@@ -1,12 +1,11 @@
 import json
-from typing import List
 
-from src.models.models import UserModel, RoomModel
+from src.models.models import RoomModel, UserModel
 
 
-def find_best_room(current_user: UserModel, rooms: List[RoomModel]):
+def find_best_room(current_user: UserModel, rooms: list[RoomModel]):
     best_match = None
-    min_age_diff = float('inf')
+    min_age_diff = float("inf")
     if rooms:
         for room in rooms:
             room = RoomModel.model_validate(json.loads(room[0]))

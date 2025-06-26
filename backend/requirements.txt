@@ -15,3 +15,5 @@ uvicorn==0.34.2
 python-decouple
 redis
 uvicorn[standard]
+ruff
+pre-commit
