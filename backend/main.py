@@ -10,7 +10,7 @@ from src.handlers.login_route import login_router
 from src.handlers.main_route import app
 
 
-def configure_logging():
+def configure_logging() -> None:
     logging.basicConfig(
         level=logging.INFO,
         datefmt="%Y-%m-%d %H:%M:%S",
@@ -19,7 +19,7 @@ def configure_logging():
     )
 
 
-async def main():
+async def main() -> None:
     app.include_router(login_router)
     app.include_router(chat_router)
     app.add_middleware(

@@ -12,7 +12,7 @@ chat_router = APIRouter()
 
 
 @chat_router.websocket("/ws/{room_id}/{username}")
-async def chat_websocket(websocket: WebSocket, room_id: int, username: str):
+async def chat_websocket(websocket: WebSocket, room_id: int, username: str) -> None:
     await manager.connect(room_id, websocket)
     logger.info(f"Подключён пользователь {username} к комнате {room_id}")
     try:

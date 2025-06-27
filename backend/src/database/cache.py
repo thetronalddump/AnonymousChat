@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from typing import Any
 
 import redis.asyncio as redis
 from redis.asyncio import Redis
@@ -17,32 +18,32 @@ EXPIRATION_TIME = 600
 class RedisConnection:
     __con: Redis | None = None
 
-    def __init__(self, init_data: dict):
+    def __init__(self, init_data: dict[Any, Any]):
         self.__init_data = init_data
 
     @staticmethod
-    def __create_connection(redis_data: dict):
+    def __create_connection(redis_data: dict[Any, Any]) -> None:
         try:
             RedisConnection.__con = redis.from_url(**redis_data)
         except Exception as e:
             logger.error("Can't connect to redis server", exc_info=e)
 
     @staticmethod
-    async def get_connection(redis_data: dict) -> Redis:
+    async def get_connection(redis_data: dict[Any, Any]) -> Redis | None:
         if not RedisConnection.__con:
             RedisConnection.__create_connection(redis_data)
         return RedisConnection.__con
 
 
 class RoomsControl:
-    def __init__(self, init_data: dict):
+    def __init__(self, init_data: dict[Any, Any]):
         self.__con: Redis | None = None
         self.__init_data = init_data
 
-    async def __create_connection(self):
+    async def __create_connection(self) -> None:
         self.__con = await RedisConnection.get_connection(self.__init_data)
 
-    async def _create_room(self, user: UserModel):
+    async def _create_room(self, user: UserModel) -> RoomModel | None:
         if not self.__con:
             await self.__create_connection()
 
@@ -73,8 +74,9 @@ class RoomsControl:
             logger.error(
                 "Error while creating room for user %s", user.nickname, exc_info=e
             )
+            return None
 
-    async def _get_rooms(self) -> list[dict] | list[None]:
+    async def _get_rooms(self) -> list[list[str]] | None:
         if not self.__con:
             await self.__create_connection()
 
@@ -95,7 +97,7 @@ class RoomsControl:
             logger.error("Error while reading from cache", exc_info=e)
             return None
 
-    async def add_participant(self, user: UserModel):
+    async def add_participant(self, user: UserModel) -> RoomModel | None:
         if not self.__con:
             await self.__create_connection()
 
@@ -120,8 +122,9 @@ class RoomsControl:
             logger.error(
                 "Error while adding participant %s to room ", user.nickname, exc_info=e
             )
+            return None
 
-    async def get_status(self, room_id: int):
+    async def get_status(self, room_id: int) -> str | None:
         if not self.__con:
             await self.__create_connection()
 
@@ -129,13 +132,13 @@ class RoomsControl:
             logger.info("Getting room from cache, id: %s", room_id)
             async with self.__con.pipeline() as connection:
                 room = await connection.get(f"room:{room_id}").execute()
-                status = json.loads(room[0])["status"]
+                status: str = json.loads(room[0])["status"]
                 return status
         except Exception as e:
             logger.error("Error while getting room from cache", exc_info=e)
             return None
 
-    async def get_companion_info(self, room_id, user):
+    async def get_companion_info(self, room_id: int, user: UserModel) -> dict[str, Any] | None:
         if not self.__con:
             await self.__create_connection()
 
@@ -144,7 +147,7 @@ class RoomsControl:
             async with self.__con.pipeline() as connection:
                 room = await connection.get(f"room:{room_id}").execute()
                 participants = json.loads(room[0])["participants"]
-                companion = [
+                companion: dict[str, Any] = [
                     participant
                     for participant in participants
                     if participant["nickname"] != user.nickname
@@ -154,7 +157,7 @@ class RoomsControl:
             logger.error("Error while getting room from cache", exc_info=e)
             return None
 
-    async def delete_room(self, room_id):
+    async def delete_room(self, room_id: int) -> None:
         if not self.__con:
             await self.__create_connection()
 

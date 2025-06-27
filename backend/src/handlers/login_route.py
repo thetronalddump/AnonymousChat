@@ -30,7 +30,7 @@ async def login(user: UserModel):
 
 
 @login_router.post("/close")
-async def close_search(room_id: int):
+async def close_search(room_id: int) -> dict[str, str]:
     await DBEntities.rooms_control.delete_room(room_id)
 
     return {"status": "closed"}
