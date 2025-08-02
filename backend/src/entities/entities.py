@@ -1,5 +1,5 @@
-import logging
 from dataclasses import dataclass
+import logging
 from typing import Final
 
 from config import redis_config

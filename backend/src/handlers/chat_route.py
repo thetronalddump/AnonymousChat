@@ -12,15 +12,15 @@ chat_router = APIRouter()
 
 
 @chat_router.websocket("/ws/{room_id}/{username}")
-async def chat_websocket(websocket: WebSocket, room_id: int, username: str):
+async def chat_websocket(websocket: WebSocket, room_id: int, username: str) -> None:
     await manager.connect(room_id, websocket)
-    logger.info(f"Подключён пользователь {username} к комнате {room_id}")
+    logger.info(f"Connected user {username} to room {room_id}")
     try:
         while True:
             data = await websocket.receive_text()
-            logger.info(f"📥 Получено от клиента: {data}")
-            await manager.send_to_room(room_id, json.dumps({"username": username, "data": data}))
-            logger.info(json.dumps({"username": username, "data": data}))
+            await manager.send_to_room(
+                room_id, json.dumps({"username": username, "data": data})
+            )
     except WebSocketDisconnect as e:
         await manager.disconnect(room_id, websocket)
-        logger.error("Юзер отключился", exc_info=e)
+        logger.error("User disconnected", exc_info=e)
