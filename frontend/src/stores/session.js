@@ -8,5 +8,10 @@ export const useSessionStore = defineStore('session', () => {
         companionInfo.value = info
     }
 
-    return { companionInfo, setCompanionInfo }
+    const wsUrl = ref(null)
+    function setWebSocketUrl(url) {
+        wsUrl.value = { ws: url }
+    }
+
+    return { companionInfo, setCompanionInfo, wsUrl, setWebSocketUrl }
 })

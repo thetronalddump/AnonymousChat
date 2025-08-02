@@ -132,7 +132,10 @@ class RoomsControl:
             logger.info("Getting room from cache, id: %s", room_id)
             async with self.__con.pipeline() as connection:
                 room = await connection.get(f"room:{room_id}").execute()
-                status: str = json.loads(room[0])["status"]
+                if room[0]:
+                    status: str = json.loads(room[0])["status"]
+                else:
+                    status = "deleted"
                 return status
         except Exception as e:
             logger.error("Error while getting room from cache", exc_info=e)
@@ -167,3 +170,18 @@ class RoomsControl:
                 await connection.delete(f"room:{room_id}").execute()
         except Exception as e:
             logger.error("Error while deleting room from cache", exc_info=e)
+
+    async def find_participant(self, user: UserModel) -> int:
+        if not self.__con:
+            await self.__create_connection()
+
+        try:
+            logger.info("Find user %s in participants of rooms", user.nickname)
+            rooms = await self._get_rooms()
+            for room in rooms:
+                if UserModel.model_dump(user) in json.loads(room[0])["participants"]:
+                    return json.loads(room[0])["room_id"]
+            return 0
+        except Exception as e:
+            logger.error("Error while searching user %s in rooms:", user.nickname, exc_info=e)
+            return 0

@@ -34,6 +34,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {useSessionStore} from "@/stores/session.js";
 
 const router = useRouter()
 const buttonType = ref('primary')
@@ -59,7 +60,10 @@ const onSubmit = async () => {
 
       const data = await res.json()
       const wsUrl = data.url
-      await router.push({name: 'Chat', query: {ws: wsUrl}})
+      const session = useSessionStore()
+      session.setCompanionInfo(data.companion_info)
+      session.setWebSocketUrl(wsUrl)
+      await router.push({name: 'Chat'})
 
     } catch (err) {
       console.error('Ошибка при логине:', err)

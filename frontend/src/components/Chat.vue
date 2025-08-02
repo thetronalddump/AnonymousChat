@@ -82,10 +82,9 @@ const scrollToBottom = async () => {
 }
 const router = useRouter()
 const route = useRoute()
-
-const wsUrl = route.query.ws
-const username = ref(wsUrl.split('/').pop())
-const roomId = ref(wsUrl.split('/')[wsUrl.split('/').length - 2])
+const wsUrl = session.wsUrl
+const username = ref(wsUrl.ws.split('/').pop())
+const roomId = ref(wsUrl.ws.split('/')[wsUrl.ws.split('/').length - 2])
 
 const messages = ref([])
 let socket = null
@@ -93,12 +92,12 @@ let socket = null
 onMounted(() => {
 
 
-  if (!wsUrl) {
+  if (!wsUrl.ws) {
     console.error('WebSocket URL не передан')
     return
   }
 
-  socket = new WebSocket(wsUrl)
+  socket = new WebSocket(wsUrl.ws)
 
   socket.onopen = () => {
     console.log('🔌 WebSocket открыт')
